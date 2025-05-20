@@ -20,11 +20,11 @@ public:
   NumberGame();
   void reset();
   bool checkGuess();
-  unsigned getUserGuesses();
-  unsigned getCorrectUserGuesses();
+  unsigned getUserGuesses() const;
+  unsigned getCorrectUserGuesses() const;
   bool generateNewNumber();
-  unsigned getTargetNumber();
-  unsigned getUserNumber();
+  unsigned getTargetNumber() const;
+  unsigned getUserNumber() const;
   unsigned numberUp();
 };
 
@@ -39,8 +39,7 @@ void NumberGame::reset() {
   randomSeed(analogRead(5));
 }
 
-bool NumberGame::checkGuess()
-{
+bool NumberGame::checkGuess() {
   ++this->userGuesses;
   if (this->userNumber == this->targetNumber) {
     ++this->correctUserGuesses;
@@ -50,13 +49,11 @@ bool NumberGame::checkGuess()
   return false;
 }
 
-unsigned NumberGame::getUserGuesses()
-{
+unsigned NumberGame::getUserGuesses() cons {
   return this->userGuesses;
 }
 
-unsigned NumberGame::getCorrectUserGuesses()
-{
+unsigned NumberGame::getCorrectUserGuesses() const {
   return this->correctUserGuesses;
 }
 
@@ -64,8 +61,6 @@ bool NumberGame::generateNewNumber() {
   if (this->userGuesses == MAX_NUMBERS) {
     return false;
   }
-
-  this->userGuesses++;
 
   do {
     this->targetNumber = random(MAX_NUMBERS);
@@ -76,11 +71,11 @@ bool NumberGame::generateNewNumber() {
   return true;
 }
 
-unsigned NumberGame::getTargetNumber() {
+unsigned NumberGame::getTargetNumber() const {
   return this->targetNumber;
 }
 
-unsigned NumberGame::getUserNumber() {
+unsigned NumberGame::getUserNumber() const {
   return this->userNumber;
 }
 

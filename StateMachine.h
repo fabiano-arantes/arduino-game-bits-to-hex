@@ -22,12 +22,17 @@ private:
   bool checkButtonWasPressed();
 public:
   StateMachine(NumberGame &game, unsigned buttonUpPin, unsigned buttonOkPin);
-  State getCurrentState();
+  State getCurrentState() const;
   void checkNextState();
   unsigned getCount() const;
   unsigned long getRemainingTime() const;
   unsigned long getElapsedTime() const;
 };
+
+StateMachine::StateMachine(NumberGame &game, unsigned buttonUpPin, unsigned buttonOkPin) : game(game), buttonUpPin(buttonUpPin), buttonOkPin(buttonOkPin) {
+  pinMode(buttonUpPin, INPUT);
+  pinMode(buttonOkPin, INPUT);
+}
 
 bool StateMachine::checkButtonWasPressed() {
   bool isOkButtonPressed = !digitalRead(buttonOkPin); 
@@ -59,14 +64,7 @@ bool StateMachine::checkButtonWasPressed() {
   return false;
 }
 
-StateMachine::StateMachine(NumberGame &game, unsigned buttonUpPin, unsigned buttonOkPin) : game(game), buttonUpPin(buttonUpPin), buttonOkPin(buttonOkPin)
-{
-  pinMode(buttonUpPin, INPUT);
-  pinMode(buttonOkPin, INPUT);
-}
-
-State StateMachine::getCurrentState() 
-{
+State StateMachine::getCurrentState() const {
   return this->currentState;
 }
   
@@ -76,7 +74,7 @@ void StateMachine::checkNextState() {
     case STATE_INIT:
       if (checkButtonWasPressed()) {
     	  game.reset();
-        count = 3;
+        count = 4;
         nextState = STATE_START;
       }
       if (count > 300) {
@@ -144,7 +142,7 @@ void StateMachine::checkNextState() {
       }
 
       break;
- 	  case STATE_TIME_UP:
+    case STATE_TIME_UP:
       if (count-- == 0) {
         nextState = STATE_FINISH;
         count = 0;
