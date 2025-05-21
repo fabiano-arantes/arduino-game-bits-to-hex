@@ -1,16 +1,8 @@
 #ifndef SHOW_STATE_H
 #define SHOW_STATE_H
 
-#include "Arduino.h"
-#include <LiquidCrystal.h>
-
 #include "Game.h"
 #include "StateMachine.h"
-
-#define LED_0_PIN 8
-#define LED_1_PIN 9
-#define LED_2_PIN 10
-#define LED_3_PIN 11
 
 typedef enum {
   LEDS_ONLY_LED_0,
@@ -21,60 +13,38 @@ typedef enum {
   LEDS_TURN_ALL_OFF
 } LedsState;
 
-void ledsValue(byte v)
-{
-  digitalWrite(LED_0_PIN, v >> 0 & 0x1);
-  digitalWrite(LED_1_PIN, v >> 1 & 0x1);
-  digitalWrite(LED_2_PIN, v >> 2 & 0x1);
-  digitalWrite(LED_3_PIN, v >> 3 & 0x1);
-}
-void ledsAnimation(LedsState s) 
-{
-  switch (s)
-  {
-    case LEDS_ONLY_LED_0:
-      ledsAnimation(LEDS_TURN_ALL_OFF);
-      digitalWrite(LED_0_PIN, HIGH);
-      break;
-    case LEDS_ONLY_LED_1:
-      ledsAnimation(LEDS_TURN_ALL_OFF);
-      digitalWrite(LED_1_PIN, HIGH);
-      break;
-    case LEDS_ONLY_LED_2:
-      ledsAnimation(LEDS_TURN_ALL_OFF);
-      digitalWrite(LED_2_PIN, HIGH);
-      break;
-    case LEDS_ONLY_LED_3:
-      ledsAnimation(LEDS_TURN_ALL_OFF);
-      digitalWrite(LED_3_PIN, HIGH);
-      break;
-    case LEDS_TURN_ALL_ON:
-      digitalWrite(LED_0_PIN, HIGH);
-      digitalWrite(LED_1_PIN, HIGH);
-      digitalWrite(LED_2_PIN, HIGH);
-      digitalWrite(LED_3_PIN, HIGH);
-      break;
-    case LEDS_TURN_ALL_OFF:
-      digitalWrite(LED_0_PIN, LOW);
-      digitalWrite(LED_1_PIN, LOW);
-      digitalWrite(LED_2_PIN, LOW);
-      digitalWrite(LED_3_PIN, LOW);
-      break;
-  }
-}
-
 class ShowState {
 private:
   LiquidCrystal &lcd;
   const NumberGame &game;
   const StateMachine &sm;
+  const byte led0Pin;
+  const byte led1Pin;
+  const byte led2Pin;
+  const byte led3Pin;
+  void printLevel();
+  void ledsAnimation(LedsState s);
+  void ledsValue(byte v);
 public:
-  ShowState(LiquidCrystal &lcd, const NumberGame &game, const StateMachine &sm);
+  ShowState(LiquidCrystal &lcd, const NumberGame &game, const StateMachine &sm, byte led0Pin,
+            byte led1Pin, byte led2Pin, byte led3Pin);
   void showCurrentState();
 };
 
-static void printLevel(LiquidCrystal &lcd, unsigned points) {
-  points = 16 * points / NumberGame::MAX_NUMBERS;
+ShowState::ShowState(LiquidCrystal &lcd, const NumberGame &game, const StateMachine &sm, byte led0Pin,
+                     byte led1Pin, byte led2Pin, byte led3Pin) : 
+                     lcd(lcd), game(game), sm(sm), led0Pin(led0Pin), led1Pin(led1Pin), led2Pin(led2Pin),
+                     led3Pin(led3Pin) 
+{
+  pinMode(led0Pin, OUTPUT);
+  pinMode(led1Pin, OUTPUT);
+  pinMode(led2Pin, OUTPUT);
+  pinMode(led3Pin, OUTPUT);
+}
+
+void ShowState::printLevel()
+{
+  unsigned points = 16 * game.getCorrectUserGuesses() / NumberGame::MAX_NUMBERS;
   if (points == 0) {
   	lcd.print("    UM JEGUE");
   } else if (points <= 2) {
@@ -82,7 +52,7 @@ static void printLevel(LiquidCrystal &lcd, unsigned points) {
   } else if (points <= 5) {
   	lcd.print("     BURRO");
   } else if (points <= 8) {
-  	lcd.print("   MEIO BURRO");
+  	lcd.print("    MEDIANO");
   } else if (points <= 11) {
   	lcd.print("      BOM");    
   } else if (points <= 14) {
@@ -94,12 +64,45 @@ static void printLevel(LiquidCrystal &lcd, unsigned points) {
   }
 }
 
-ShowState::ShowState(LiquidCrystal &lcd, const NumberGame &game, const StateMachine &sm) : lcd(lcd), game(game), sm(sm) 
+void ShowState::ledsValue(byte v)
 {
-  pinMode(LED_0_PIN, OUTPUT);
-  pinMode(LED_1_PIN, OUTPUT);
-  pinMode(LED_2_PIN, OUTPUT);
-  pinMode(LED_3_PIN, OUTPUT);
+  digitalWrite(led0Pin, v >> 0 & 0x1);
+  digitalWrite(led1Pin, v >> 1 & 0x1);
+  digitalWrite(led2Pin, v >> 2 & 0x1);
+  digitalWrite(led3Pin, v >> 3 & 0x1);
+}
+void ShowState::ledsAnimation(LedsState s)
+{
+  switch (s) {
+    case LEDS_ONLY_LED_0:
+      ledsAnimation(LEDS_TURN_ALL_OFF);
+      digitalWrite(led0Pin, HIGH);
+      break;
+    case LEDS_ONLY_LED_1:
+      ledsAnimation(LEDS_TURN_ALL_OFF);
+      digitalWrite(led1Pin, HIGH);
+      break;
+    case LEDS_ONLY_LED_2:
+      ledsAnimation(LEDS_TURN_ALL_OFF);
+      digitalWrite(led2Pin, HIGH);
+      break;
+    case LEDS_ONLY_LED_3:
+      ledsAnimation(LEDS_TURN_ALL_OFF);
+      digitalWrite(led3Pin, HIGH);
+      break;
+    case LEDS_TURN_ALL_ON:
+      digitalWrite(led0Pin, HIGH);
+      digitalWrite(led1Pin, HIGH);
+      digitalWrite(led2Pin, HIGH);
+      digitalWrite(led3Pin, HIGH);
+      break;
+    case LEDS_TURN_ALL_OFF:
+      digitalWrite(led1Pin, LOW);
+      digitalWrite(led0Pin, LOW);
+      digitalWrite(led2Pin, LOW);
+      digitalWrite(led3Pin, LOW);
+      break;
+  }
 }
 
 void ShowState::showCurrentState() 
@@ -159,8 +162,10 @@ void ShowState::showCurrentState()
     case STATE_NUM_UP:
       lcd.setCursor(15, 1);      
       lcd.print(game.getUserNumber(), HEX);
+      lcd.blink();
       break;
     case STATE_CHECK_GUESS:
+      lcd.noBlink();
       break;
     case STATE_CORRECT_GUESS:
       if (sm.getCount() <= 1) {
@@ -168,13 +173,13 @@ void ShowState::showCurrentState()
         lcd.print("    CORRETO!    ");
         ledsAnimation(LEDS_TURN_ALL_OFF);
       } else if (sm.getCount() == 2) {
-        digitalWrite(LED_3_PIN, HIGH);
+        digitalWrite(led3Pin, HIGH);
       } else if (sm.getCount() == 4) {
-        digitalWrite(LED_2_PIN, HIGH);
+        digitalWrite(led2Pin, HIGH);
       } else if (sm.getCount() == 6) {
-        digitalWrite(LED_1_PIN, HIGH);
+        digitalWrite(led1Pin, HIGH);
       } else if (sm.getCount() == 8) {
-        digitalWrite(LED_0_PIN, HIGH);
+        digitalWrite(led0Pin, HIGH);
       } else if (sm.getCount() == 10) {
         ledsAnimation(LEDS_TURN_ALL_OFF);
         lcd.setCursor(0, 1);      
@@ -197,22 +202,38 @@ void ShowState::showCurrentState()
       }
       break;
     case STATE_WAITING_USER:
+      static unsigned long lastTime = 0;
+      static bool showPoints = false;
+
+      if (sm.getElapsedTime() - lastTime >= 3) {
+        lastTime = sm.getElapsedTime();
+        showPoints = !showPoints;
+      }
+
       lcd.setCursor(0, 0);
-      lcd.print(sm.getRemainingTime());
-      lcd.print("s");
-      if (sm.getRemainingTime() < 10) {
-        lcd.print(" ");
+      if (!showPoints) {
+        lcd.print("Rodada ");
+        lcd.print(game.getUserGuesses() + 1);
+        lcd.print(" de ");
+        lcd.print(NumberGame::MAX_NUMBERS);
+        lcd.print("   ");
+      } else {
+        lcd.print(sm.getRemainingTime());
+        lcd.print("s    ");
+
+        if (game.getUserGuesses() < 10) {
+          lcd.setCursor(7, 0);
+        } else {
+          lcd.setCursor(6, 0);  
+        }
+        
+        lcd.print("Pontos: ");
+        lcd.print(game.getCorrectUserGuesses());
       }
-      lcd.setCursor(11, 0);
-      if (game.getUserGuesses() + 1 < 10) {
-        lcd.print("0");  
-      }
-      lcd.print(game.getUserGuesses() + 1);
-      lcd.print("/");
-      lcd.print(NumberGame::MAX_NUMBERS);
-      lcd.setCursor(0, 1);
+      lcd.setCursor(15, 1);
       break;
     case STATE_TIME_UP:
+      lcd.noBlink();
       lcd.clear();
       lcd.setCursor(1, 0);
       lcd.print("TEMPO ESGOTADO");
@@ -223,10 +244,11 @@ void ShowState::showCurrentState()
       delay(1000);
       break;
     case STATE_FINISH:
+      lcd.noBlink();
       if (sm.getCount() <= 1) {
         lcd.clear();
         ledsAnimation(LEDS_TURN_ALL_OFF);
-      } else if (sm.getCount() < 100) { // mostra pontos e tempo decorrido
+      } else if (sm.getCount() < 100) { // show points and elapsed time
         if (sm.getCount() % 20 == 0) { 
           lcd.clear();
           ledsAnimation(LEDS_TURN_ALL_OFF);
@@ -242,7 +264,7 @@ void ShowState::showCurrentState()
           lcd.print("s");
           ledsAnimation(LEDS_TURN_ALL_ON);
         }
-      } else if (sm.getCount() >= 100 && sm.getCount() < 120) { // roda tela pra esquerda
+      } else if (sm.getCount() >= 100 && sm.getCount() < 120) { // rotate screen to left
         lcd.scrollDisplayLeft();
 
         // acenderá somente 1 led de cada vez dentro do período
@@ -266,13 +288,13 @@ void ShowState::showCurrentState()
         lcd.setCursor(0, 1);
         ledsAnimation(LEDS_TURN_ALL_OFF);
         if ((sm.getCount() / 10) % 2 == 0) {
-          digitalWrite(LED_0_PIN, HIGH);
-          digitalWrite(LED_3_PIN, HIGH);
+          digitalWrite(led0Pin, HIGH);
+          digitalWrite(led3Pin, HIGH);
           lcd.print("                ");
         } else {
-          digitalWrite(LED_1_PIN, HIGH);
-          digitalWrite(LED_2_PIN, HIGH);
-          printLevel(lcd, game.getCorrectUserGuesses());
+          digitalWrite(led1Pin, HIGH);
+          digitalWrite(led2Pin, HIGH);
+          printLevel();
         }
       }
 

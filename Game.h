@@ -1,10 +1,6 @@
 #ifndef GAME_H
 #define GAME_H
 
-#include "State.h"
-#include <Arduino.h>
-#include <string.h>
-
 class NumberGame {
 public:
   static const unsigned MAX_NUMBERS = 16;
@@ -13,7 +9,6 @@ private:
   unsigned targetNumber;
   unsigned userGuesses;
   unsigned correctUserGuesses;
-  unsigned long startTime;
   bool numbers[MAX_NUMBERS];
 
 public:
@@ -35,7 +30,7 @@ NumberGame::NumberGame() {
 }
 
 void NumberGame::reset() {
-  memset(this, 0, sizeof(NumberGame));  // cuidado: isso é perigoso se tiver ponteiros ou objetos
+  memset(this, 0, sizeof(NumberGame));
   randomSeed(analogRead(5));
 }
 
@@ -49,7 +44,7 @@ bool NumberGame::checkGuess() {
   return false;
 }
 
-unsigned NumberGame::getUserGuesses() cons {
+unsigned NumberGame::getUserGuesses() const {
   return this->userGuesses;
 }
 
